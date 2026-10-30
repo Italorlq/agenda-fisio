@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fisioterapia a domicílio: agende sua sessão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="fundo" aria-hidden="true">
+  <span class="glow g1"></span><span class="glow g2"></span><span class="glow g3"></span>
+  <svg class="onda w1" viewBox="0 0 1200 200" preserveAspectRatio="none"><path d="M0 100C150 40 450 160 600 100C750 40 1050 160 1200 100L1200 200L0 200Z"/></svg>
+  <svg class="onda w2" viewBox="0 0 1200 200" preserveAspectRatio="none"><path d="M0 100C150 40 450 160 600 100C750 40 1050 160 1200 100L1200 200L0 200Z"/></svg>
+  <svg class="onda w3" viewBox="0 0 1200 200" preserveAspectRatio="none"><path d="M0 100C150 40 450 160 600 100C750 40 1050 160 1200 100L1200 200L0 200Z"/></svg>
+</div>
+
+<div class="site">
+  <header class="intro">
+    <div class="assinatura">
+      <div>
+        <p class="marca-nome">Marcelo Coutinho</p>
+        <p class="registro">Fisioterapeuta · CREFITO 2: 93133</p>
+      </div>
+    </div>
+    <div>
+      <h1>Fisioterapia no conforto da sua casa</h1>
+      <p class="texto">Escolha o dia e o horário, informe o endereço e eu vou até você. A confirmação é imediata.</p>
+    </div>
+    <ul class="info">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h14V10M10 20v-6h4v6"/></svg><span><strong>Atendimento a domicílio</strong></span></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span><strong>Segunda a sexta</strong>13h às 20h</span></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><strong>Atendimento especializado de 1 hora</strong></span></li>
+    </ul>
+  </header>
+
+  <main class="painel">
+    <div class="painel-topo">
+      <h2>Agende seu atendimento</h2>
+      <p>Escolha a data, o horário e informe onde será o atendimento.</p>
+    </div>
+
+    <div class="agenda">
+      <section aria-label="Calendário">
+        <p class="rotulo">Data</p>
+        <div class="cal-cab">
+          <button type="button" class="nav" id="ant" aria-label="Mês anterior">‹</button>
+          <strong id="mesNome"></strong>
+          <button type="button" class="nav" id="prox" aria-label="Próximo mês">›</button>
+        </div>
+        <div class="semana" aria-hidden="true"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+        <div class="grade" id="grade"></div>
+      </section>
+
+      <section aria-label="Horários">
+        <p class="rotulo" id="tituloHorarios">Horários</p>
+        <div id="horarios" class="horarios"></div>
+        <p id="msgHorarios" class="vazio">Escolha uma data no calendário.</p>
+      </section>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="campos">
+      <div><label for="nome">Nome completo</label><input type="text" id="nome" autocomplete="name"></div>
+      <div><label for="telefone">Telefone com DDD</label><input type="tel" id="telefone" autocomplete="tel" placeholder="(24) 99999-9999"></div>
+    </div>
+    <div class="largo"><label for="endereco">Endereço da sessão</label><input type="text" id="endereco" autocomplete="street-address" placeholder="Rua, número, bairro e complemento"></div>
+    <div><label for="observacao">Observação <span class="opc">(opcional)</span></label><textarea id="observacao" placeholder="Ex.: dor lombar, retorno de cirurgia"></textarea></div>
+
+    <div class="rodape">
+      <p class="resumo" id="resumo">Nenhum horário selecionado.</p>
+      <button class="botao" id="confirmar" disabled>Confirmar agendamento</button>
+    </div>
+    <div id="aviso" class="aviso" role="status"></div>
+  </main>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const primeiroMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  let mes = new Date(primeiroMes), dataSel = null, horaSel = null;
+  const iso = (d) => d.toLocaleDateString('sv-SE');
+  const extenso = (s) => new Date(s + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const campos = [$('nome'), $('telefone'), $('endereco')];
+
+  function desenharCalendario() {
+    const grade = $('grade');
+    grade.innerHTML = '';
+    $('mesNome').textContent = mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    $('ant').disabled = mes <= primeiroMes;
+    $('prox').disabled = mes >= new Date(hoje.getFullYear(), hoje.getMonth() + 3, 1);
+    for (let i = 0; i < mes.getDay(); i++) grade.appendChild(document.createElement('span'));
+    const total = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate();
+    for (let n = 1; n <= total; n++) {
+      const d = new Date(mes.getFullYear(), mes.getMonth(), n);
+      const s = iso(d);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'dia' + (s === iso(hoje) ? ' hoje' : '');
+      b.textContent = n;
+      b.disabled = d.getDay() === 0 || d.getDay() === 6 || d < hoje;
+      if (s === dataSel) b.setAttribute('aria-pressed', 'true');
+      b.onclick = () => { dataSel = s; desenharCalendario(); carregarHorarios(); };
+      grade.appendChild(b);
+    }
+  }
+
+  function atualizar() {
+    const pronto = dataSel && horaSel;
+    $('resumo').textContent = pronto ? `${extenso(dataSel)}, às ${horaSel}` : 'Nenhum horário selecionado.';
+    $('resumo').classList.toggle('pronto', Boolean(pronto));
+    $('confirmar').disabled = !(pronto && campos.every((c) => c.value.trim()));
+  }
+
+  function mostrarAviso(texto, tipo) {
+    $('aviso').className = 'aviso ' + tipo;
+    $('aviso').textContent = texto;
+  }
+
+  async function carregarHorarios() {
+    horaSel = null;
+    $('horarios').innerHTML = '';
+    $('aviso').className = 'aviso';
+    $('aviso').textContent = '';
+    atualizar();
+    if (!dataSel) return;
+    $('tituloHorarios').textContent = extenso(dataSel);
+    const r = await fetch('/api/horarios?data=' + dataSel);
+    const dados = await r.json();
+    if (!r.ok) { $('msgHorarios').textContent = dados.erro; return; }
+    $('msgHorarios').textContent = dados.horarios.length ? '' : 'Sem horários livres nesse dia. Tente outra data.';
+    dados.horarios.forEach((h) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'horario';
+      b.textContent = h;
+      b.setAttribute('aria-pressed', 'false');
+      b.onclick = () => {
+        horaSel = h;
+        document.querySelectorAll('.horario').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+        b.setAttribute('aria-pressed', 'true');
+        atualizar();
+      };
+      $('horarios').appendChild(b);
+    });
+  }
+
+  $('ant').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() - 1, 1); desenharCalendario(); };
+  $('prox').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() + 1, 1); desenharCalendario(); };
+  campos.forEach((c) => c.addEventListener('input', atualizar));
+
+  $('telefone').addEventListener('input', () => {
+    const v = $('telefone').value.replace(/\D/g, '').slice(0, 11);
+    $('telefone').value = v.length > 10 ? v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+            : v.length > 6 ? v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+                    : v.length > 2 ? v.replace(/(\d{2})(\d*)/, '($1) $2') : v;
+  });
+
+  $('confirmar').addEventListener('click', async () => {
+    $('confirmar').disabled = true;
+    const r = await fetch('/api/agendamentos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome: $('nome').value, telefone: $('telefone').value, endereco: $('endereco').value,
+        observacao: $('observacao').value, data: dataSel, hora: horaSel
+      })
+    });
+    const dados = await r.json();
+    if (r.ok) {
+      const texto = `Sessão confirmada para ${extenso(dados.data)}, às ${dados.hora}.`;
+      campos.forEach((c) => (c.value = ''));
+      $('observacao').value = '';
+      await carregarHorarios();
+      mostrarAviso(texto, 'ok');
+    } else {
+      await carregarHorarios();
+      mostrarAviso(dados.erro, 'erro');
+    }
+  });
+
+  desenharCalendario();
+</script>
+</body>
+</html>
